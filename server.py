@@ -198,7 +198,6 @@ async def handle_client(websocket):
                     print(f" >> Delay: {delay:.2f} ms | Jitter: {jitter:.2f} ms | Throughput: {throughput:.2f} kbps")
                     print(f"[INTERCEPT] Payload: {pkt}")
                     tgt = pkt.get("to", "").lower()
-                    print(f"\n[INTERCEPT] Raw Payload routed to {tgt}: {pkt}")
                     if tgt == nick_key:
                         await safe_send(websocket, {"type": "ERROR", "msg": "Cannot message yourself."})
                         continue
