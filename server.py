@@ -19,9 +19,7 @@ import base64
 import hashlib
 import http
 from websockets.datastructures import Headers
-import time
-last_delay = 0
-total_bytes_received = 0
+
 import logging
 
 # Mute the background noise from the websockets library
@@ -85,10 +83,11 @@ def verify_browser_sig(challenge: bytes, sig_hex: str, spki_b64: str) -> bool:
 
 
 async def handle_client(websocket):
+    import time
+    start_time = time.time()
     last_arrival_time = None
     last_delay = 0
     total_bytes_received = 0
-    start_time = time.time()
     nickname = None
     nick_key = None
 
@@ -171,26 +170,32 @@ async def handle_client(websocket):
 
                 if ptype == "MESSAGE":
                     current_time = time.time()
-                    # 1. DELAY (Latency) 
-                    # In a real-world NTP-synced system, we'd use a timestamp from the client.
-                    # Here, we measure 'Processing Delay' at the server.
-                    delay = (current_time - start_time) * 1000 # in ms
                     
-                    # 2. JITTER (Delay Variation)
-                    # Jitter = |Current_Delay - Previous_Delay|
-                    jitter = abs(delay - last_delay) if last_delay > 0 else 0
+                    # 1. DELAY (Arrival Time Variance)
+                    if last_arrival_time is None:
+                        delay = 15.0 # Baseline ms for first packet
+                    else:
+                        delay = (current_time - last_arrival_time) * 1000
+                    
+                    last_arrival_time = current_time
+                    
+                    # 2. JITTER (Absolute difference between current and last delay)
+                    jitter = abs(delay - last_delay) if last_delay > 0 else 0.0
                     last_delay = delay
                     
-                    # 3. THROUGHPUT
-                    # Throughput = Total Bits / Total Time
-                    msg_size = len(message) 
+                    # 3. THROUGHPUT (Safe byte measurement)
+                    # We convert the 'pkt' dictionary back to a string to measure its exact byte size securely
+                    msg_size = len(str(pkt).encode('utf-8'))
                     total_bytes_received += msg_size
                     elapsed = current_time - start_time
-                    throughput = (total_bytes_received * 8) / elapsed / 1024 # in kbps
+                    
+                    # Prevent division by zero on instant connections
+                    if elapsed <= 0: elapsed = 0.001 
+                    
+                    throughput = (total_bytes_received * 8) / elapsed / 1024 # kbps
                     
                     print(f"\n[NETWORK METRICS]")
-                    print(f" >> Delay: {delay:.2f} ms | Jitter: {jitter:.2f} ms")
-                    print(f" >> Throughput: {throughput:.2f} kbps")
+                    print(f" >> Delay: {delay:.2f} ms | Jitter: {jitter:.2f} ms | Throughput: {throughput:.2f} kbps")
                     print(f"[INTERCEPT] Payload: {pkt}")
                     tgt = pkt.get("to", "").lower()
                     print(f"\n[INTERCEPT] Raw Payload routed to {tgt}: {pkt}")
