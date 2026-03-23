@@ -20,6 +20,12 @@ import hashlib
 import http
 from websockets.datastructures import Headers
 
+import logging
+
+# Mute the background noise from the websockets library
+logging.getLogger("websockets").setLevel(logging.CRITICAL)
+logging.getLogger("websockets.server").setLevel(logging.CRITICAL)
+
 HOST = '0.0.0.0'
 PORT = int(os.environ.get("PORT", 55555))
 
