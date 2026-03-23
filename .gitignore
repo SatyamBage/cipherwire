@@ -1,2 +1,5 @@
 .keys/
 __pycache__/
+.venv/
+.vscode/
+*.save
