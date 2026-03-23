@@ -159,6 +159,7 @@ async def handle_client(websocket):
 
                 if ptype == "MESSAGE":
                     tgt = pkt.get("to", "").lower()
+                    print(f"\n[INTERCEPT] Raw Payload routed to {tgt}: {pkt}")
                     if tgt == nick_key:
                         await safe_send(websocket, {"type": "ERROR", "msg": "Cannot message yourself."})
                         continue
