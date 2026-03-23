@@ -20,7 +20,8 @@ import hashlib
 import http
 from websockets.datastructures import Headers
 import time
-
+last_delay = 0
+total_bytes_received = 0
 import logging
 
 # Mute the background noise from the websockets library
@@ -182,15 +183,14 @@ async def handle_client(websocket):
                     
                     # 3. THROUGHPUT
                     # Throughput = Total Bits / Total Time
-                    msg_size = len(event.data) # size of the JSON string
+                    msg_size = len(message) 
                     total_bytes_received += msg_size
                     elapsed = current_time - start_time
-                    throughput = (total_bytes_received * 8) / elapsed / 1024 # kbps
+                    throughput = (total_bytes_received * 8) / elapsed / 1024 # in kbps
                     
-                    print(f"\n--- NETWORK ANALYSIS ---")
-                    print(f"[METRIC] Delay: {delay:.2f} ms")
-                    print(f"[METRIC] Jitter: {jitter:.2f} ms")
-                    print(f"[METRIC] Throughput: {throughput:.2f} kbps")
+                    print(f"\n[NETWORK METRICS]")
+                    print(f" >> Delay: {delay:.2f} ms | Jitter: {jitter:.2f} ms")
+                    print(f" >> Throughput: {throughput:.2f} kbps")
                     print(f"[INTERCEPT] Payload: {pkt}")
                     tgt = pkt.get("to", "").lower()
                     print(f"\n[INTERCEPT] Raw Payload routed to {tgt}: {pkt}")
