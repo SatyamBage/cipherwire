@@ -19,6 +19,7 @@ import base64
 import hashlib
 import http
 from websockets.datastructures import Headers
+import time
 
 import logging
 
@@ -83,6 +84,10 @@ def verify_browser_sig(challenge: bytes, sig_hex: str, spki_b64: str) -> bool:
 
 
 async def handle_client(websocket):
+    last_arrival_time = None
+    last_delay = 0
+    total_bytes_received = 0
+    start_time = time.time()
     nickname = None
     nick_key = None
 
@@ -164,6 +169,29 @@ async def handle_client(websocket):
                 ptype = pkt.get("type")
 
                 if ptype == "MESSAGE":
+                    current_time = time.time()
+                    # 1. DELAY (Latency) 
+                    # In a real-world NTP-synced system, we'd use a timestamp from the client.
+                    # Here, we measure 'Processing Delay' at the server.
+                    delay = (current_time - start_time) * 1000 # in ms
+                    
+                    # 2. JITTER (Delay Variation)
+                    # Jitter = |Current_Delay - Previous_Delay|
+                    jitter = abs(delay - last_delay) if last_delay > 0 else 0
+                    last_delay = delay
+                    
+                    # 3. THROUGHPUT
+                    # Throughput = Total Bits / Total Time
+                    msg_size = len(event.data) # size of the JSON string
+                    total_bytes_received += msg_size
+                    elapsed = current_time - start_time
+                    throughput = (total_bytes_received * 8) / elapsed / 1024 # kbps
+                    
+                    print(f"\n--- NETWORK ANALYSIS ---")
+                    print(f"[METRIC] Delay: {delay:.2f} ms")
+                    print(f"[METRIC] Jitter: {jitter:.2f} ms")
+                    print(f"[METRIC] Throughput: {throughput:.2f} kbps")
+                    print(f"[INTERCEPT] Payload: {pkt}")
                     tgt = pkt.get("to", "").lower()
                     print(f"\n[INTERCEPT] Raw Payload routed to {tgt}: {pkt}")
                     if tgt == nick_key:
