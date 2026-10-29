@@ -1,0 +1,6 @@
+pytest>=8,<10
+pytest-asyncio>=0.23,<2
+ruff>=0.9,<1
+mypy>=1.11,<2
+bandit>=1.7,<2
+pip-audit>=2.7,<3

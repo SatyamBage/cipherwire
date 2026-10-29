@@ -1,3 +1,2 @@
-websockets>=14.0
-rsa
-cryptography
+websockets>=14.0,<16.0
+cryptography>=42.0
