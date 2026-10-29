@@ -1,5 +1,33 @@
+# Local identities and state
 .keys/
-__pycache__/
-.venv/
-.vscode/
+.chat_state/
+*.pem
+*.key
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!*.env.example
 *.save
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+node_modules/
