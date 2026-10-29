@@ -1,2 +1,2 @@
-websockets>=14.0,<16.0
+websockets>=17.3,<18.0
 cryptography>=42.0
