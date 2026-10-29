@@ -1,0 +1,29 @@
+# Caddy reverse proxy for Cipherwire.
+#
+# Set CHAT_DOMAIN in /etc/caddy/environment (or replace the placeholder):
+#   CHAT_DOMAIN=chat.example.com
+#
+# Caddy obtains and renews the TLS certificate automatically. The relay itself
+# stays bound to 127.0.0.1:55555 and must never be exposed publicly.
+
+{$CHAT_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy 127.0.0.1:55555
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/cipherwire-access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format json
+	}
+}

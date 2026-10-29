@@ -1,0 +1,36 @@
+[Unit]
+Description=Cipherwire end-to-end encrypted relay
+Documentation=https://github.com/SatyamBage/cipherwire
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cipherwire
+Group=cipherwire
+WorkingDirectory=/opt/cipherwire
+EnvironmentFile=/etc/cipherwire/cipherwire.env
+ExecStart=/opt/cipherwire/.venv/bin/python /opt/cipherwire/server.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+# Keep the relay unprivileged and its state directory writable.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/var/lib/cipherwire
+StateDirectory=cipherwire
+StateDirectoryMode=0700
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
