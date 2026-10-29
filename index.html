@@ -1,468 +1,101 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZeroTrust Chat</title>
-    <style>
-        /* --- Frost Glass & Modern Minimalist Theme --- */
-        :root {
-            /* FIXED: Removed the var() wrapper here */
-            --glass-bg: rgba(17, 17, 20, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.06);
-            --blur-amount: 16px;
-            
-            --color-primary: #3498db;
-            --color-primary-dim: rgba(52, 152, 219, 0.2);
-            --color-on-primary: #ffffff;
-            --color-background: #08090a;
-            --color-text: #ececed;
-            --color-outline: rgba(255, 255, 255, 0.3);
-            --color-error: #e74c3c;
-            --color-success: #2ecc71;
-            
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --border-radius-lg: 24px;
-            --border-radius-md: 16px;
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: var(--font-family); 
-            background-color: var(--color-background); 
-            background-image: 
-                radial-gradient(at 10% 10%, rgba(52, 152, 219, 0.15) 0px, transparent 50%),
-                radial-gradient(at 90% 90%, rgba(155, 89, 182, 0.1) 0px, transparent 50%);
-            color: var(--color-text); 
-            height: 100vh; 
-            /* Fix for mobile browser URL bars */
-            height: 100dvh; 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            letter-spacing: -0.01em;
-        }
-
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--blur-amount));
-            -webkit-backdrop-filter: blur(var(--blur-amount));
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-
-        /* --- Login Screen --- */
-        #login-screen { 
-            padding: 40px; 
-            border-radius: var(--border-radius-lg); 
-            width: 90%; 
-            max-width: 420px; 
-            text-align: center; 
-        }
-        #login-screen h2 { margin-bottom: 8px; color: var(--color-primary); font-weight: 700; font-size: 1.8em; }
-        #login-screen p { margin-bottom: 30px; font-size: 0.9em; color: var(--color-outline); }
-        
-        .input-field { 
-            width: 100%; padding: 16px; border-radius: var(--border-radius-md); 
-            border: 1px solid var(--color-outline); background: rgba(0,0,0,0.2); 
-            color: var(--color-text); font-size: 16px; margin-bottom: 20px; outline: none; transition: var(--transition); 
-        }
-        .input-field:focus { border-color: var(--color-primary); background: rgba(0,0,0,0.4); }
-        
-        .btn-primary { 
-            width: 100%; padding: 16px; border-radius: var(--border-radius-md); 
-            background: var(--color-primary); color: var(--color-on-primary); 
-            font-size: 16px; font-weight: 600; border: none; cursor: pointer; transition: var(--transition); 
-        }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        #login-status { margin-top: 15px; font-size: 0.85em; font-weight: 500;}
-
-        /* --- Main App Layout --- */
-        #app-layout { display: none; width: 100%; height: 100%; }
-        
-        /* --- Sidebar --- */
-        #sidebar { 
-            width: 340px; 
-            border-right: 1px solid var(--glass-border); 
-            display: flex; flex-direction: column; 
-            background: rgba(10, 10, 12, 0.4);
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        }
-        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-header h3 { font-size: 1.1em; font-weight: 600; color: #fff; }
-        .burn-btn { background: rgba(231, 76, 60, 0.2); color: var(--color-error); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.8em; font-weight: 700; transition: var(--transition); }
-        .burn-btn:hover { background: var(--color-error); color: white; }
-        
-        #contact-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .contact { padding: 12px 15px; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; transition: var(--transition); color: var(--color-outline); border: 1px solid transparent; }
-        .contact:hover { background: rgba(255,255,255,0.03); color: var(--color-text); }
-        .contact.active { background: var(--color-primary-dim); color: var(--color-primary); border-color: rgba(52, 152, 219, 0.2); font-weight: 600; }
-        
-        .contact-avatar { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; font-size: 1.1em; font-weight: 700; color: var(--color-outline); }
-        .contact.active .contact-avatar { background: var(--color-primary); color: white; }
-        .unread-badge { background: var(--color-error); color: white; border-radius: 8px; padding: 2px 7px; font-size: 0.75em; font-weight: 800; margin-left: auto; display: none; }
-
-        /* --- Chat Area --- */
-        #chat-area { flex: 1; display: flex; flex-direction: column; background: transparent; }
-        
-        .chat-header { 
-            padding: 15px 20px; border-bottom: 1px solid var(--glass-border); 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .chat-header h3 { font-size: 1.05em; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        /* Mobile Back Button */
-        .mobile-back-btn { 
-            display: none; background: transparent; border: none; color: var(--color-primary); 
-            font-size: 1.5em; cursor: pointer; padding: 0 10px 0 0; line-height: 1; 
-        }
-        
-        .e2e-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85em; font-weight: 600; min-width: 60px;}
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); border-radius: 34px; border: 1px solid var(--glass-border); transition: .3s; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: #fff; border-radius: 50%; transition: .3s; }
-        input:checked + .slider { background-color: var(--color-primary); border-color: transparent; }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        #messages { 
-            flex: 1; overflow-y: auto; padding: 20px; 
-            display: flex; flex-direction: column; gap: 15px; 
-        }
-        
-        .msg-row { display: flex; width: 100%; }
-        .msg-row.sent { justify-content: flex-end; }
-        .msg-row.received { justify-content: flex-start; }
-        .msg-row.system { justify-content: center; }
-        
-        .bubble { 
-            max-width: 80%; padding: 12px 16px; border-radius: 16px; font-size: 0.9em; line-height: 1.4; word-wrap: break-word; 
-            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-        }
-        .bubble.sent { background: rgba(52, 152, 219, 0.25); color: #fff; border-bottom-right-radius: 4px; border: 1px solid rgba(52, 152, 219, 0.3); }
-        .bubble.received { background: rgba(255, 255, 255, 0.05); color: var(--color-text); border-bottom-left-radius: 4px; border: 1px solid var(--glass-border); }
-        .bubble.system { background: rgba(0,0,0,0.2); color: var(--color-outline); font-size: 0.8em; font-weight: 600; text-align: center; border-radius: 10px; padding: 6px 12px; border: 1px solid var(--glass-border); }
-        
-        .msg-meta { font-size: 0.7em; opacity: 0.6; margin-top: 4px; display: flex; justify-content: space-between; gap: 10px; }
-
-        .chat-input-area { 
-            padding: 15px; border-top: 1px solid var(--glass-border); 
-            display: flex; gap: 10px; align-items: center; 
-        }
-        #chatInput { 
-            flex: 1; padding: 14px 20px; border-radius: 24px; border: 1px solid var(--glass-border); 
-            background: rgba(0,0,0,0.2); color: var(--color-text); font-size: 15px; outline: none; 
-        }
-        #chatInput:focus:not(:disabled) { border-color: var(--color-outline); background: rgba(0,0,0,0.4); }
-        
-        .btn-send { 
-            background: var(--color-primary); color: var(--color-on-primary); border: none; 
-            width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; 
-            font-size: 1.2em; cursor: pointer; transition: var(--transition); 
-        }
-        .btn-send:disabled { background: rgba(255,255,255,0.05); color: var(--color-outline); border: 1px solid var(--glass-border); }
-
-        /* =========================================
-           MOBILE RESPONSIVE MEDIA QUERIES
-           ========================================= */
-        @media (max-width: 768px) {
-            #sidebar { width: 100%; border-right: none; }
-            #chat-area { display: none; width: 100%; }
-            .mobile-back-btn { display: block; }
-            .e2e-toggle span { display: none; } /* Hide the text on mobile to save space, keep just the switch */
-            .bubble { max-width: 90%; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Cipherwire is an experimental end-to-end encrypted chat relay with pinned identities and signed messages.">
+  <title>Cipherwire</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
 </head>
 <body>
+  <main class="shell">
+    <section id="onboarding" class="onboarding" aria-labelledby="welcome-title">
+      <div class="intro">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">⌁</span>Cipherwire</div>
+        <p class="eyebrow">Protocol v2 · direct messages</p>
+        <h1 id="welcome-title">Your messages, readable only by the intended peer.</h1>
+        <p class="lead">This browser keeps a device-local cryptographic identity and verifies every encrypted envelope before it is displayed.</p>
+        <ul class="security-list">
+          <li><b>01</b><span>Each contact has a permanent key-derived ID. Display names can be duplicated safely.</span></li>
+          <li><b>02</b><span>Compare fingerprints outside this app before trusting a new contact.</span></li>
+          <li><b>03</b><span>Messages are AES-GCM encrypted and signed end-to-end.</span></li>
+        </ul>
+      </div>
+      <form id="connect-form" class="connect-card">
+        <h2>Connect to relay</h2>
+        <label class="field">Display name
+          <input id="nickname" name="nickname" autocomplete="nickname" maxlength="32" required placeholder="e.g. Satya">
+        </label>
+        <label class="field">Relay URL
+          <input id="relay-url" name="relay-url" inputmode="url" autocomplete="off" required placeholder="wss://chat.example.com">
+        </label>
+        <p class="hint">Use <b>wss://</b> in public. Relay-hosted: keep the default. Separate static hosting: enter your relay’s <b>wss://</b> URL. The relay administrator must allow this website’s origin.</p>
+        <button id="connect-button" class="button" type="submit">Create identity &amp; connect</button>
+        <p id="connection-note" class="connection-note" role="status"></p>
+        <p class="hint warning-note"><b>Experimental:</b> no forward secrecy, not independently audited. The old v1 code in git history is insecure; see <b>SECURITY-NOTICE.md</b>.</p>
+      </form>
+    </section>
 
-    <div id="login-screen" class="glass-panel">
-        <h2>ZeroTrust</h2>
-        <p>Encrypted Node</p>
-        <input type="text" id="nickInput" class="input-field" placeholder="Ephemeral nickname..." autocomplete="off" onkeypress="if(event.key === 'Enter') connect()">
-        <button class="btn-primary" onclick="connect()">Connect Securely</button>
-        <p id="login-status"></p>
-    </div>
-
-    <div id="app-layout">
-        
-        <div id="sidebar">
-            <div class="sidebar-header">
-                <h3>👤 <span id="myNameDisplay"></span></h3>
-                <button class="burn-btn" onclick="burnProtocol()">🔥 BURN</button>
-            </div>
-            <div id="contact-list"></div>
+    <section id="chat-app" class="chat-app" hidden aria-label="Secure chat">
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <div class="brand"><span class="brand-mark" aria-hidden="true">⌁</span>Cipherwire</div>
+          <button id="disconnect" class="icon-button" type="button" aria-label="Disconnect">↗</button>
         </div>
-
-        <div id="chat-area">
-            <div class="chat-header glass-panel">
-                <div class="header-left">
-                    <button class="mobile-back-btn" onclick="showSidebar()">←</button>
-                    <h3 id="activeChatName">Welcome</h3>
-                </div>
-                <div class="e2e-toggle">
-                    <span id="e2e-label" style="color: var(--color-success); text-shadow: 0 0 10px var(--color-success);">🛡️</span>
-                    <label class="switch">
-                         <input type="checkbox" id="encryptionToggle" checked onchange="toggleEncryption()">
-                         <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <div id="messages"></div>
-            
-            <div class="chat-input-area glass-panel">
-                <input type="text" id="chatInput" placeholder="Select a peer..." disabled autocomplete="off" onkeypress="if(event.key === 'Enter') sendMessage()">
-                <button class="btn-send" id="sendBtn" onclick="sendMessage()" disabled>🚀</button>
-            </div>
+        <div class="identity">
+          <div id="presence" class="presence">Disconnected</div>
+          <div id="self-name" class="identity-name"></div>
+          <div id="self-id" class="identity-id"></div>
         </div>
+        <div>
+          <div class="peer-tools">
+            <input id="peer-filter" type="search" aria-label="Filter peers" placeholder="Search people or ID">
+            <button id="refresh-peers" class="icon-button" type="button" aria-label="Refresh online peers">↻</button>
+          </div>
+          <div id="peer-list" class="peer-list" aria-live="polite"></div>
+        </div>
+        <div class="sidebar-footer">A green status means this browser pinned the contact’s two public-key fingerprints after you confirmed them outside this chat.</div>
+      </aside>
 
+      <section class="conversation">
+        <header class="conversation-header">
+          <button id="back-to-peers" class="icon-button mobile-back" type="button" aria-label="Back to peers">←</button>
+          <div>
+            <h2 id="conversation-name">Select a peer</h2>
+            <p id="conversation-id">No encrypted conversation selected</p>
+          </div>
+          <div class="header-spacer"></div>
+          <div id="security-chip" class="secure-chip warning">Awaiting selection</div>
+        </header>
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="welcome"><strong>Start carefully.</strong>Select an online identity. New identities must be verified through another trusted channel before messages can be sent.</div>
+        </div>
+        <div class="composer-wrap">
+          <div id="verify-banner" class="verify-banner"><span>Fingerprint verification is required before sending.</span><button id="verify-peer" class="button" type="button">Verify peer</button></div>
+          <form id="composer" class="composer">
+            <textarea id="message-input" aria-label="Encrypted message" rows="1" disabled placeholder="Select a verified peer…"></textarea>
+            <button id="send-button" class="button" type="submit" disabled>Send</button>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="verify-dialog" aria-labelledby="verify-title">
+    <div class="dialog-content">
+      <h2 id="verify-title">Verify contact keys</h2>
+      <p>Use a different trusted channel—call, in-person conversation, or previously verified account—to compare both fingerprints exactly. The relay cannot perform this verification for you.</p>
+      <div id="fingerprints" class="fingerprint"></div>
+      <label class="confirm-row"><input id="verify-confirmation" type="checkbox">I compared both fingerprints with this person through an independent channel.</label>
+      <div class="dialog-actions">
+        <button id="cancel-verify" class="button secondary" type="button">Cancel</button>
+        <button id="confirm-verify" class="button" type="button" disabled>Trust this identity</button>
+      </div>
     </div>
-
-    <script>
-        // --- STATE ---
-        let ws;
-        let myName = "";
-        let signKeyPair = null; 
-        let encKeyPair = null;  
-        let peerKeys = {};      
-        let encryptionEnabled = true;
-        let currentChat = "Global"; 
-        let chatHistory = { "Global": [] }; 
-        let unreadCounts = {};
-
-        // --- CRYPTO HELPERS ---
-        const ab2b64 = (buf) => btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
-        const b642ab = (b64) => {
-            const bin = atob(b64);
-            const bytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            return bytes.buffer;
-        };
-        const hex2ab = (hex) => new Uint8Array(hex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16))).buffer;
-        const ab2hex = (buf) => Array.prototype.map.call(new Uint8Array(buf), x => ('00' + x.toString(16)).slice(-2)).join('');
-
-        function formatTime() {
-            const now = new Date();
-            return now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-        }
-
-        function updateSidebar() {
-            const list = document.getElementById("contact-list");
-            list.innerHTML = "";
-            
-            const globalDiv = document.createElement("div");
-            globalDiv.className = `contact ${currentChat === "Global" ? 'active' : ''}`;
-            globalDiv.onclick = () => selectChat("Global");
-            globalDiv.innerHTML = `<div class="contact-avatar">🌐</div><div>System Logs</div><div class="unread-badge" style="display:${unreadCounts["Global"] ? 'block':'none'}">${unreadCounts["Global"]}</div>`;
-            list.appendChild(globalDiv);
-
-            for (const nick of Object.keys(peerKeys)) {
-                const div = document.createElement("div");
-                div.className = `contact ${currentChat === nick ? 'active' : ''}`;
-                div.onclick = () => selectChat(nick);
-                div.innerHTML = `<div class="contact-avatar">${nick.charAt(0).toUpperCase()}</div><div>${nick}</div><div class="unread-badge" style="display:${unreadCounts[nick] ? 'block':'none'}">${unreadCounts[nick]}</div>`;
-                list.appendChild(div);
-            }
-        }
-
-        function selectChat(target) {
-            currentChat = target;
-            unreadCounts[target] = 0; 
-            updateSidebar();
-            
-            document.getElementById("activeChatName").innerText = target === "Global" ? "🌐 System Logs" : `🔒 ${target}`;
-            
-            const input = document.getElementById("chatInput");
-            const btn = document.getElementById("sendBtn");
-            if (target === "Global") {
-                input.disabled = true; btn.disabled = true; input.placeholder = "System logs are read-only.";
-            } else {
-                input.disabled = false; btn.disabled = false; input.placeholder = `Message ${target}...`; input.focus();
-            }
-            
-            // MOBILE RESPONSIVE LOGIC: Hide sidebar, show chat
-            if (window.innerWidth <= 768) {
-                document.getElementById("sidebar").style.display = "none";
-                document.getElementById("chat-area").style.display = "flex";
-            }
-            
-            renderMessages();
-        }
-
-        // MOBILE RESPONSIVE LOGIC: Show sidebar, hide chat
-        function showSidebar() {
-            document.getElementById("sidebar").style.display = "flex";
-            document.getElementById("chat-area").style.display = "none";
-        }
-
-        function renderMessages() {
-            const box = document.getElementById("messages");
-            box.innerHTML = "";
-            
-            const msgs = chatHistory[currentChat] || [];
-            if (msgs.length === 0) {
-                box.innerHTML = `<div style="text-align:center; color:var(--color-outline); padding-top:20px; font-size:0.9em;">Secure session initialized.</div>`;
-                return;
-            }
-
-            msgs.forEach(m => {
-                const row = document.createElement("div");
-                let cssClass = m.sender === myName ? "sent" : "received";
-                if (m.sender === "System") cssClass = "system";
-                
-                row.className = `msg-row ${cssClass}`;
-                let securityIcon = m.e2ee ? "🛡️" : "⚠️";
-                
-                row.innerHTML = `<div class="bubble ${cssClass}"><div>${m.text}</div>${m.sender !== "System" ? `<div class="msg-meta"><span>${securityIcon}</span><span>${m.time}</span></div>` : ''}</div>`;
-                box.appendChild(row);
-            });
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function saveMessage(chatId, sender, text, e2ee) {
-            if (!chatHistory[chatId]) chatHistory[chatId] = [];
-            chatHistory[chatId].push({ sender, text, e2ee, time: formatTime() });
-            
-            if (currentChat === chatId) { renderMessages(); } 
-            else { unreadCounts[chatId] = (unreadCounts[chatId] || 0) + 1; updateSidebar(); }
-        }
-
-        function toggleEncryption() {
-            const checkbox = document.getElementById("encryptionToggle");
-            encryptionEnabled = checkbox.checked;
-            const label = document.getElementById("e2e-label");
-            if(encryptionEnabled) {
-                label.innerText = "🛡️"; 
-                label.style.color = "var(--color-success)";
-                label.style.textShadow = "0 0 10px var(--color-success)";
-            } else {
-                label.innerText = "⚠️"; 
-                label.style.color = "var(--color-error)";
-                label.style.textShadow = "0 0 10px var(--color-error)";
-            }
-        }
-
-        function burnProtocol() {
-            ws.close(); signKeyPair = null; encKeyPair = null;
-            document.body.innerHTML = `<div style="text-align:center; padding-top:40vh; font-size:1.5em; font-weight:700; color:var(--color-error); backdrop-filter:blur(20px); height:100vh;">🔥 BURNED.<br><span style="font-size:0.6em; color:var(--color-text); font-weight:400;">Keys shredded.</span></div>`;
-        }
-
-        async function connect() {
-            const SERVER_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
-            myName = document.getElementById("nickInput").value.trim();
-            if(!myName) return;
-
-            document.getElementById("login-status").innerText = "[*] Generating Keys...";
-            document.getElementById("login-status").style.color = "var(--color-primary)";
-            
-            signKeyPair = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
-            encKeyPair = await crypto.subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["encrypt", "decrypt"]);
-
-            const signPubExp = await crypto.subtle.exportKey("spki", signKeyPair.publicKey);
-            const encPubExp = await crypto.subtle.exportKey("spki", encKeyPair.publicKey);
-
-            ws = new WebSocket(SERVER_URL);
-            
-            ws.onmessage = async (event) => {
-                const msg = JSON.parse(event.data);
-
-                if (msg.type === "IDENTIFY") {
-                    const challengeBuf = hex2ab(msg.challenge);
-                    const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", signKeyPair.privateKey, challengeBuf);
-                    ws.send(JSON.stringify({ nickname: myName, client_type: "browser", public_key: ab2b64(signPubExp), enc_key: ab2b64(encPubExp), signature: ab2hex(signature) }));
-                } 
-                else if (msg.type === "AUTH_OK") {
-                    document.getElementById("login-screen").style.display = "none";
-                    document.getElementById("app-layout").style.display = "flex";
-                    document.getElementById("myNameDisplay").innerText = myName;
-                    
-                    saveMessage("Global", "System", "Engine online.", false);
-                    for (const [nick, data] of Object.entries(msg.peer_keys)) { await importPeer(nick, data.enc_key); }
-                    updateSidebar();
-                }
-                else if (msg.type === "USER_JOINED") {
-                    await importPeer(msg.nickname, msg.enc_key);
-                    saveMessage("Global", "System", `'${msg.nickname}' connected. Key imported.`, false);
-                    updateSidebar();
-                }
-                else if (msg.type === "USER_LEFT") {
-                    delete peerKeys[msg.nickname.toLowerCase()];
-                    saveMessage("Global", "System", `'${msg.nickname}' disconnected. Key dropped.`, false);
-                    if (currentChat === msg.nickname) {
-                        if(window.innerWidth > 768) selectChat("Global");
-                        else showSidebar();
-                    }
-                    updateSidebar();
-                }
-                else if (msg.type === "SERVER_MSG") saveMessage("Global", "System", `[SERVER] ${msg.msg}`, false);
-                else if (msg.type === "ERROR") saveMessage("Global", "System", `[ERROR] ${msg.msg}`, false);
-                else if (msg.type === "MESSAGE") {
-                    const sender = msg.from;
-                    if (msg.plaintext_demo) saveMessage(sender, sender, msg.plaintext_demo, false);
-                    else {
-                        try {
-                            const plaintext = await decryptPayload(msg.encrypted_key, msg.nonce, msg.ciphertext);
-                            saveMessage(sender, sender, plaintext, true);
-                        } catch (e) {
-                            saveMessage("Global", "System", `Decryption failed for ${sender}`, false);
-                        }
-                    }
-                }
-            };
-            ws.onclose = () => { saveMessage("Global", "System", "Connection lost.", false); };
-        }
-
-        async function importPeer(nick, b64_enc_key) {
-            const ab = b642ab(b64_enc_key);
-            peerKeys[nick.toLowerCase()] = await crypto.subtle.importKey("spki", ab, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]);
-        }
-
-        async function encryptPayload(plaintext, targetNick) {
-            const targetKey = peerKeys[targetNick.toLowerCase()];
-            if (!targetKey) throw new Error("Key not found");
-            const sessionKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, sessionKey, new TextEncoder().encode(plaintext));
-            const rawSessionKey = await crypto.subtle.exportKey("raw", sessionKey);
-            const encSessionKey = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, targetKey, rawSessionKey);
-            return { enc_key: ab2b64(encSessionKey), nonce: ab2b64(iv), ciphertext: ab2b64(ciphertext) };
-        }
-
-        async function decryptPayload(enc_key_b64, nonce_b64, ct_b64) {
-            const encSessionKey = b642ab(enc_key_b64);
-            const rawSessionKey = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, encKeyPair.privateKey, encSessionKey);
-            const sessionKey = await crypto.subtle.importKey("raw", rawSessionKey, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
-            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b642ab(nonce_b64) }, sessionKey, b642ab(ct_b64));
-            return new TextDecoder().decode(decrypted);
-        }
-
-        async function sendMessage() {
-            if (currentChat === "Global") return;
-            const input = document.getElementById("chatInput");
-            const text = input.value.trim();
-            if (!text) return;
-
-            input.value = ""; 
-
-            if (!encryptionEnabled) {
-                ws.send(JSON.stringify({ type: "MESSAGE", to: currentChat, encrypted_key: "", nonce: "", ciphertext: "", plaintext_demo: text }));
-                saveMessage(currentChat, myName, text, false);
-                return;
-            }
-
-            try {
-                const payload = await encryptPayload(text, currentChat);
-                ws.send(JSON.stringify({ type: "MESSAGE", to: currentChat, encrypted_key: payload.enc_key, nonce: payload.nonce, ciphertext: payload.ciphertext }));
-                saveMessage(currentChat, myName, text, true);
-            } catch (e) {
-                saveMessage("Global", "System", `Failed to encrypt to ${currentChat}`, false);
-            }
-        }
-    </script>
+  </dialog>
+  <div id="toast" class="toast" role="status"></div>
 </body>
 </html>
